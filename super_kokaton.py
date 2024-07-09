@@ -103,13 +103,16 @@ class Enemy(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = WIDTH, random.randint(0, HEIGHT)
         self.vx, self.vy = -1, 0
+        self.speed = 1
 
     def update(self):
         """
         敵機を移動させる
         引数 screen：画面Surface
         """
-        self.rect.move_ip(self.vx, self.vy)
+        self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)
+        # if check_bound(self.rect) != (True, True):
+        #     self.kill()
 
 
 class Score:
