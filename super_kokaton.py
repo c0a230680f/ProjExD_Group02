@@ -53,6 +53,8 @@ class Bird(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = xy
         self.speed = 1
+        self.life = 1  # ライフを追加
+        self.life_image = pg.transform.rotozoom(pg.image.load(f"fig/4.png"), 0, 0.5)
 
     def change_img(self, num: int, screen: pg.Surface):
         """
@@ -89,6 +91,27 @@ class Bird(pg.sprite.Sprite):
         if check_bound(self.rect) != (True, True):
             self.rect.move_ip(-self.speed*i, -self.speed*j)
         screen.blit(self.image, self.rect)
+
+        # ライフを画像で表示する
+        life_text = "Life:"
+        font = pg.font.Font(None, 36)
+        text = font.render(life_text, True, (255, 255, 255))
+        screen.blit(text, (20, HEIGHT - 40))
+
+        x_offset = 20 + text.get_width() + 10  # テキストの右側に10ピクセルの間隔を空ける
+        y = HEIGHT - 40
+        for _ in range(self.life):
+            screen.blit(self.life_image, (x_offset, y))
+            x_offset += self.life_image.get_width() + 10
+            
+        # ライフが2になったらこうかとんを一回り大きくする
+        if self.life == 2:
+            self.image = pg.transform.rotozoom(pg.image.load("fig/3.png"), 0, 2.5)
+            self.image = pg.transform.flip(self.image, True, False)
+        # ライフが3になったらさらに大きくする
+        elif self.life == 3:
+            self.image = pg.transform.rotozoom(pg.image.load("fig/3.png"), 0, 3.0)
+            self.image = pg.transform.flip(self.image, True, False)
 
 
 class Score:
@@ -127,6 +150,28 @@ class Time:
         screen.blit(self.image, self.rect)
 
 
+class Chicken(pg.sprite.Sprite):
+    """
+    チキンを食べてライフを１つ増やす機能
+    """
+    
+    def __init__(self):
+        super().__init__()
+        image = pg.image.load(f"fig/chicken.png")
+        self.image = pg.transform.scale(image, (100, 100))
+        self.rect = self.image.get_rect()
+        self.rect.center = random.randint(500, WIDTH), 0
+        self.vy, self.vx = 1,-1  # チキンの降下速度を設定する
+
+    def update(self):
+        """
+        チキンを画面内を降下させる
+        """
+        self.rect.move_ip(self.vx, self.vy)  # チキンを降下させる
+        if self.rect.top > HEIGHT:  # チキンが画面外に出たら
+            self.kill()  # チキンを削除する
+
+
 def main():
     pg.display.set_caption("スーパーこうかとんブラザーズ")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -136,6 +181,7 @@ def main():
     bird = Bird(3, (900, 400))
     score = Score()
     time = Time()
+    chickens = pg.sprite.Group()  # チキンの機能
 
     while True:
         key_lst = pg.key.get_pressed()
@@ -149,9 +195,18 @@ def main():
         screen.blit(bg_img, [-x+3200, 0])
         screen.blit(bg_img2, [-x+4800, 0])
         
+        if x % 1000 == 0 and bird.life < 3 :  # 1000フレームに1回，チキンを出現させる
+            chickens.add(Chicken())
+        
+        if pg.sprite.spritecollide(bird, chickens, True):  # チキンを食べた時の処理
+            bird.life += 1  # ライフを増やす
+            #bird.change_img(6, screen)  # こうかとん喜びエフェクト
+        
         bird.update(key_lst, screen)
         score.update(screen)
         time.update(screen)
+        chickens.update()
+        chickens.draw(screen)
         pg.display.update()
         time.tmr += 1
         clock.tick(200)
