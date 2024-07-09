@@ -179,7 +179,7 @@ def main():
         #     bird.change_img(6, screen)  # こうかとん喜びエフェクト
         # 上記の機能はマージするときに調整する
 
-        if len(pg.sprite.spritecollide(bird, emys, True)) != 0:
+        if len(pg.sprite.spritecollide(bird, emys, True)) != 0: # GameOver
             bird.change_img(8, screen)  # こうかとん悲しみエフェクト
             fonto = pg.font.Font(None, 80)
             txt = fonto.render("Game Over", True, (0, 0, 0))
