@@ -90,6 +90,17 @@ class Bird(pg.sprite.Sprite):
             self.rect.move_ip(-self.speed*i, -self.speed*j)
         screen.blit(self.image, self.rect)
 
+class Egg(pg.sprite.Sprite):
+    def __init__(self, bird: Bird):
+        super().__init__()
+        self.image = pg.image.load("fig/egg.png")  # 卵の画像を読み込む
+        self.rect = self.image.get_rect()
+        self.rect.centerx = bird.rect.centerx  # こうかとんのx座標に合わせる
+        self.rect.centery = bird.rect.centery + bird.rect.height // 2  # こうかとんの下に配置
+        self.speed = 10  # 卵の速度
+
+    def update(self):
+        self.rect.move_ip(self.speed, 0)  # 右方向に移動
 
 class Score:
     """
@@ -136,12 +147,16 @@ def main():
     bird = Bird(3, (900, 400))
     score = Score()
     time = Time()
+    eggs = []
 
     while True:
         key_lst = pg.key.get_pressed()
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
+            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+                eggs.append(Egg(bird))  # スペースキーが押されたら卵を生成
+ 
 
         x = time.tmr % 3200
         screen.blit(bg_img, [-x, 0])
@@ -152,10 +167,110 @@ def main():
         bird.update(key_lst, screen)
         score.update(screen)
         time.update(screen)
+
+        for egg in eggs:
+            egg.update()  # 卵の位置を更新
+            screen.blit(egg.image, egg.rect)  # 卵を描画
+            
+
         pg.display.update()
         time.tmr += 1
         clock.tick(200)
 
+
+if __name__ == "__main__":
+    pg.init()
+    main()
+    pg.quit()
+    sys.exit()
+
+class Score:
+    """
+    打ち落とした敵機の数をスコアとして表示するクラス
+    敵機：1点
+    """
+    def __init__(self):
+        self.font = pg.font.Font(None, 50)
+        self.color = (0, 0, 255)
+        self.value = 0
+        self.image = self.font.render(f"Score: {self.value}", 0, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.center = 100, HEIGHT-50
+
+    def update(self, screen: pg.Surface):
+        self.image = self.font.render(f"Score: {self.value}", 0, self.color)
+        screen.blit(self.image, self.rect)
+
+
+class Time:
+    """
+    タイムを表示
+    """
+    def __init__(self):
+        self.font = pg.font.Font(None, 50)
+        self.color = (0, 0, 255)
+        self.value = 0
+        self.image = self.font.render(f"Time: {self.value}", 0, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.center = 100, HEIGHT-100
+        self.tmr = 0
+
+    def update(self, screen: pg.Surface):
+        self.image = self.font.render(f"Time: {self.tmr/200}", 0, self.color)
+        screen.blit(self.image, self.rect)
+
+
+def main():
+    pg.display.set_caption("スーパーこうかとんブラザーズ")
+    screen = pg.display.set_mode((WIDTH, HEIGHT))
+    clock  = pg.time.Clock()
+    bg_img = pg.image.load("fig/pg_bg.jpg")
+    bg_img2 = pg.transform.flip(bg_img, True, False)
+    bird = Bird(3, (900, 400))
+    score = Score()
+    tim = Time()
+    emys = pg.sprite.Group()  
+    eggs = pg.sprite.Group()
+
+    while True:
+        key_lst = pg.key.get_pressed()
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                return 0
+            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+                eggs.add(Egg(bird))  # 卵を生成してグループに追加
+
+        x = tim.tmr % 3200
+        screen.blit(bg_img, [-x, 0])
+        screen.blit(bg_img2, [-x+1600, 0])
+        screen.blit(bg_img, [-x+3200, 0])
+        screen.blit(bg_img2, [-x+4800, 0])
+        
+        bird.update(key_lst, screen)
+        score.update(screen)
+        tim.update(screen)
+
+        # # 敵の生成 
+        # if tim.tmr % 100 == 0:
+        #     emys.add(Enemy())
+
+        # # 敵の移動と描画
+        # emys.update()  # 敵グループの更新
+        # emys.draw(screen)  # 敵グループの描画
+
+        # # 卵の移動と描画、敵との衝突判定
+        # eggs.update()  # 卵グループの更新
+        # eggs.draw(screen)  # 卵グループの描画
+
+
+        # 衝突判定と処理
+        collisions = pg.sprite.groupcollide(eggs, emys, True, True)  # 衝突したスプライトの削除
+        for egg, enemies_hit in collisions.items():
+            score.value += len(enemies_hit)  # 衝突した敵の数だけスコアを加算
+
+        pg.display.update()
+        tim.tmr += 1
+        clock.tick(200)
 
 
 if __name__ == "__main__":
