@@ -155,7 +155,7 @@ def main():
     pg.display.set_caption("こうかとんのスカイフラッグ")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     clock  = pg.time.Clock()
-    bg_img = pg.image.load("fig/pg_bg.jpg")
+    bg_img = pg.image.load("fig/bg_natural_sky.jpg")
     bg_img2 = pg.transform.flip(bg_img, True, False)
     bird = Bird(3, (900, 400))
     score = Score()
