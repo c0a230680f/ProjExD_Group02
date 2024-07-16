@@ -142,6 +142,23 @@ class Enemy(pg.sprite.Sprite):
         # if check_bound(self.rect) != (True, True):
         #     self.kill()
 
+class Egg(pg.sprite.Sprite):
+    def __init__(self, bird: Bird, screen: pg.Surface):
+        super().__init__()
+        self.vx, self.vy = bird.dire
+        angle = math.degrees(math.atan2(-self.vy, self.vx))
+        self.image = pg.transform.rotozoom(pg.image.load("fig/egg.png"), angle, 2.0)  # 卵の画像を読み込む
+        self.vx = math.cos(math.radians(angle))
+        self.vy = math.sin(math.radians(angle))
+        self.rect = self.image.get_rect()
+        self.rect.centerx = bird.rect.centerx+bird.rect.width*self.vx  # こうかとんのx座標に合わせる
+        self.rect.centery = bird.rect.centery + bird.rect.height *self.vy  # こうかとんの下に配置
+        self.speed = 5  # 卵の速度
+
+    def update(self):
+        self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)  # 右方向に移動
+        # if check_bound(self.rect) != (True,True):
+        #     self.kill()
 
 class Score:
     """
@@ -231,14 +248,18 @@ def main():
     emys = pg.sprite.Group()
     flag = pg.sprite.Group()
     chickens = pg.sprite.Group()  # チキンの機能
+    eggs = pg.sprite.Group()
     count = 0  # 旗用のカウンター
-    
+    # eggs = []
 
     while True:
         key_lst = pg.key.get_pressed()
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
+            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+                eggs.add(Egg(bird, screen))  # スペースキーが押されたら卵を生成
+ 
 
         x = tim.tmr % 3200
         screen.blit(bg_img, [-x, 0])
@@ -248,11 +269,6 @@ def main():
 
         if tim.tmr % 300 == 0:
             emys.add(Enemy())
-
-        # for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
-        #     score.value += 1  # 1点アップ
-        #     bird.change_img(6, screen)  # こうかとん喜びエフェクト
-        # 上記の機能はマージするときに調整する
 
         if len(pg.sprite.spritecollide(bird, emys, True)) != 0: # GameOver
             bird.life -= 1
@@ -278,8 +294,10 @@ def main():
             font_c = pg.font.Font(None, 80)
             txt = font_c.render("Game Clear", True, (255, 0, 0))  # クリア文字表示
             txt_t = font_c.render(f"Clear Time:{tim.tmr/200}", True, (255, 0, 0))  # クリアタイム表示
-            screen.blit(txt, [WIDTH/2-150, HEIGHT/2-150])
-            screen.blit(txt_t, [WIDTH/2-200, HEIGHT/2-50])
+            txt_s = font_c.render(f"Score:{score.value}", True, (255, 0, 0)) # スコア表示
+            screen.blit(txt, [WIDTH/2, HEIGHT/2-150])
+            screen.blit(txt_t, [WIDTH/2, HEIGHT/2-50])
+            screen.blit(txt_s, [WIDTH/2, HEIGHT/2+50])
             pg.display.update()
             time.sleep(5)
             pg.display.update()
@@ -295,8 +313,11 @@ def main():
         
         if pg.sprite.spritecollide(bird, chickens, True):  # チキンを食べた時の処理
             bird.life += 1  # ライフを増やす
-            #bird.change_img(6, screen)  # こうかとん喜びエフェクト
-        
+
+        # 衝突判定と処理
+        for emy in pg.sprite.groupcollide(emys, eggs, True, True).keys():
+            score.value += 1  # 1点アップ
+            bird.change_img(6, screen)  # こうかとん喜びエフェクト
         
         bird.update(key_lst, screen)
         emys.update()
@@ -307,6 +328,9 @@ def main():
         flag.draw(screen)
         chickens.update()
         chickens.draw(screen)
+        eggs.update()  # 卵グループの更新
+        eggs.draw(screen)  # 卵グループの描画
+
         pg.display.update()
         tim.tmr += 1
         clock.tick(200)
