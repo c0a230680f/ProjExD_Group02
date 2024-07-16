@@ -152,7 +152,7 @@ class Time:
 
 
 def main():
-    pg.display.set_caption("スーパーこうかとんブラザーズ")
+    pg.display.set_caption("こうかとんのスカイフラッグ")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     clock  = pg.time.Clock()
     bg_img = pg.image.load("fig/pg_bg.jpg")
