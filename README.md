@@ -29,3 +29,6 @@
 ### ToDo
 - [ ] 当たり判定を大きくする
 - [ ] 画面外に出たらself.killする（エラーが出て実装できず）
+
+### ゲーム画面
+![image alt](https://github.com/c0a23108d6/ProjExD_Group02/blob/main/fig/geme_screen.png)
