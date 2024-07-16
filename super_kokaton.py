@@ -151,6 +151,24 @@ class Time:
         screen.blit(self.image, self.rect)
 
 
+class Flag(pg.sprite.Sprite):
+    """
+    旗に関するクラス
+    """
+    def __init__(self):
+        super().__init__()
+        img = pg.image.load("fig/flag.png")
+        img = pg.transform.scale(img, (100, 100))
+        self.font = pg.font.Font(None, 50)
+        self.image = img
+        self.rect = self.image.get_rect()
+        self.rect.center = WIDTH, random.randint(0, HEIGHT)
+        self.vx, self.vy = -2, 0
+
+    def update(self, screen: pg.Surface):
+        self.rect.move_ip(self.vx, self.vy)
+
+
 def main():
     pg.display.set_caption("こうかとんのスカイフラッグ")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -161,6 +179,8 @@ def main():
     score = Score()
     tim = Time()
     emys = pg.sprite.Group()
+    flag = pg.sprite.Group()
+    count = 0  # 旗用のカウンター
 
     while True:
         key_lst = pg.key.get_pressed()
@@ -192,16 +212,40 @@ def main():
             pg.display.update()
             time.sleep(2)
             return
+
+        if tim.tmr%1000 == 0:  # 1000フレームに1回，旗を出現させる
+            flag.add(Flag())
+        if count < 5:  # 旗の合計が5本未満だったら
+            if len(pg.sprite.spritecollide(bird, flag, True)) != 0:  # 旗に当たったら
+                count += 1  # 旗カウント+1
+        else:
+            # クリア画面
+            bird.change_img(6, screen)  #こうかとん喜び画像切り替え
+            font_c = pg.font.Font(None, 80)
+            txt = font_c.render("Game Clear", True, (255, 0, 0))  # クリア文字表示
+            txt_t = font_c.render(f"Clear Time:{tim.tmr/200}", True, (255, 0, 0))  # クリアタイム表示
+            screen.blit(txt, [WIDTH/2-150, HEIGHT/2-150])
+            screen.blit(txt_t, [WIDTH/2-200, HEIGHT/2-50])
+            pg.display.update()
+            time.sleep(5)
+            pg.display.update()
+            time.sleep(1)
+            return
+        
+        font = pg.font.Font(None, 50)  # カウンター用のフォント
+        count_text =  font.render(f"Flag: {count}", 0, (0, 0, 255))
+        screen.blit(count_text, (45, HEIGHT-160))
         
         bird.update(key_lst, screen)
         emys.update()
         emys.draw(screen)
         score.update(screen)
         tim.update(screen)
+        flag.update(screen)
+        flag.draw(screen)
         pg.display.update()
         tim.tmr += 1
         clock.tick(200)
-
 
 
 if __name__ == "__main__":
