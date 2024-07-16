@@ -53,6 +53,8 @@ class Bird(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = xy
         self.speed = 1
+        self.life = 1  # ライフを追加
+        self.life_image = pg.transform.rotozoom(pg.image.load(f"fig/4.png"), 0, 0.5)
 
     def change_img(self, num: int, screen: pg.Surface):
         """
@@ -77,7 +79,7 @@ class Bird(pg.sprite.Sprite):
             i = 0
             j = 1
         elif key_lst[pg.K_LEFT]:
-            i = -1
+            i = -2
             j = 0
         elif key_lst[pg.K_RIGHT]:
             i = 2
@@ -89,6 +91,32 @@ class Bird(pg.sprite.Sprite):
         if check_bound(self.rect) != (True, True):
             self.rect.move_ip(-self.speed*i, -self.speed*j)
         screen.blit(self.image, self.rect)
+
+        # ライフを画像で表示する
+        life_text = "Life:"
+        font = pg.font.Font(None, 36)
+        text = font.render(life_text, True, (255, 255, 255))
+        screen.blit(text, (20, HEIGHT - 40))
+
+        x_offset = 20 + text.get_width() + 10  # テキストの右側に10ピクセルの間隔を空ける
+        y = HEIGHT - 40
+        for _ in range(self.life):
+            screen.blit(self.life_image, (x_offset, y))
+            x_offset += self.life_image.get_width() + 10
+        
+        # ライフが1になったらこうかとんを一回り大きくする
+        if self.life == 1:
+            self.image = pg.transform.rotozoom(pg.image.load("fig/3.png"), 0, 2)
+            self.image = pg.transform.flip(self.image, True, False)
+            
+        # ライフが2になったらこうかとんを一回り大きくする
+        if self.life == 2:
+            self.image = pg.transform.rotozoom(pg.image.load("fig/3.png"), 0, 3)
+            self.image = pg.transform.flip(self.image, True, False)
+        # ライフが3になったらさらに大きくする
+        elif self.life == 3:
+            self.image = pg.transform.rotozoom(pg.image.load("fig/3.png"), 0, 4.0)
+            self.image = pg.transform.flip(self.image, True, False)
 
 
 class Enemy(pg.sprite.Sprite):
@@ -168,6 +196,28 @@ class Flag(pg.sprite.Sprite):
     def update(self, screen: pg.Surface):
         self.rect.move_ip(self.vx, self.vy)
 
+        
+class Chicken(pg.sprite.Sprite):
+    """
+    チキンを食べてライフを１つ増やす機能
+    """
+    
+    def __init__(self):
+        super().__init__()
+        image = pg.image.load(f"fig/chicken.png")
+        self.image = pg.transform.scale(image, (100, 100))
+        self.rect = self.image.get_rect()
+        self.rect.center = random.randint(500, WIDTH), 0
+        self.vy, self.vx = 1,-1  # チキンの降下速度を設定する
+
+    def update(self):
+        """
+        チキンを画面内を降下させる
+        """
+        self.rect.move_ip(self.vx, self.vy)  # チキンを降下させる
+        if self.rect.top > HEIGHT:  # チキンが画面外に出たら
+            self.kill()  # チキンを削除する
+
 
 def main():
     pg.display.set_caption("こうかとんのスカイフラッグ")
@@ -180,7 +230,9 @@ def main():
     tim = Time()
     emys = pg.sprite.Group()
     flag = pg.sprite.Group()
+    chickens = pg.sprite.Group()  # チキンの機能
     count = 0  # 旗用のカウンター
+    
 
     while True:
         key_lst = pg.key.get_pressed()
@@ -203,15 +255,17 @@ def main():
         # 上記の機能はマージするときに調整する
 
         if len(pg.sprite.spritecollide(bird, emys, True)) != 0: # GameOver
-            bird.change_img(8, screen)  # こうかとん悲しみエフェクト
-            fonto = pg.font.Font(None, 80)
-            txt = fonto.render("Game Over", True, (0, 0, 0))
-            screen.blit(txt, [WIDTH/2-170, HEIGHT/2-50])
-            score.update(screen)
-            tim.update(screen)
-            pg.display.update()
-            time.sleep(2)
-            return
+            bird.life -= 1
+            if bird.life <= 0:
+                bird.change_img(8, screen)  # こうかとん悲しみエフェクト
+                fonto = pg.font.Font(None, 80)
+                txt = fonto.render("Game Over", True, (0, 0, 0))
+                screen.blit(txt, [WIDTH/2-170, HEIGHT/2-50])
+                score.update(screen)
+                tim.update(screen)
+                pg.display.update()
+                time.sleep(2)
+                return
 
         if tim.tmr%1000 == 0:  # 1000フレームに1回，旗を出現させる
             flag.add(Flag())
@@ -236,6 +290,14 @@ def main():
         count_text =  font.render(f"Flag: {count}", 0, (0, 0, 255))
         screen.blit(count_text, (45, HEIGHT-160))
         
+        if x % 1200 == 0 and bird.life < 3 :  # 1000フレームに1回，チキンを出現させる
+            chickens.add(Chicken())
+        
+        if pg.sprite.spritecollide(bird, chickens, True):  # チキンを食べた時の処理
+            bird.life += 1  # ライフを増やす
+            #bird.change_img(6, screen)  # こうかとん喜びエフェクト
+        
+        
         bird.update(key_lst, screen)
         emys.update()
         emys.draw(screen)
@@ -243,6 +305,8 @@ def main():
         tim.update(screen)
         flag.update(screen)
         flag.draw(screen)
+        chickens.update()
+        chickens.draw(screen)
         pg.display.update()
         tim.tmr += 1
         clock.tick(200)
