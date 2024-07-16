@@ -91,6 +91,30 @@ class Bird(pg.sprite.Sprite):
         screen.blit(self.image, self.rect)
 
 
+class Enemy(pg.sprite.Sprite):
+    """
+    敵機に関するクラス
+    """
+    imgs = [pg.image.load(f"fig/alien{i}.png") for i in range(1, 4)]
+    
+    def __init__(self):
+        super().__init__()
+        self.image = random.choice(__class__.imgs)
+        self.rect = self.image.get_rect()
+        self.rect.center = WIDTH, random.randint(0, HEIGHT)
+        self.vx, self.vy = -1, 0
+        self.speed = 1
+
+    def update(self):
+        """
+        敵機を移動させる
+        引数 screen：画面Surface
+        """
+        self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)
+        # if check_bound(self.rect) != (True, True):
+        #     self.kill()
+
+
 class Score:
     """
     打ち落とした敵機の数をスコアとして表示するクラス
@@ -128,14 +152,15 @@ class Time:
 
 
 def main():
-    pg.display.set_caption("スーパーこうかとんブラザーズ")
+    pg.display.set_caption("こうかとんのスカイフラッグ")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     clock  = pg.time.Clock()
-    bg_img = pg.image.load("fig/pg_bg.jpg")
+    bg_img = pg.image.load("fig/bg_natural_sky.jpg")
     bg_img2 = pg.transform.flip(bg_img, True, False)
     bird = Bird(3, (900, 400))
     score = Score()
-    time = Time()
+    tim = Time()
+    emys = pg.sprite.Group()
 
     while True:
         key_lst = pg.key.get_pressed()
@@ -143,17 +168,38 @@ def main():
             if event.type == pg.QUIT:
                 return 0
 
-        x = time.tmr % 3200
+        x = tim.tmr % 3200
         screen.blit(bg_img, [-x, 0])
         screen.blit(bg_img2, [-x+1600, 0])
         screen.blit(bg_img, [-x+3200, 0])
         screen.blit(bg_img2, [-x+4800, 0])
+
+        if tim.tmr % 300 == 0:
+            emys.add(Enemy())
+
+        # for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
+        #     score.value += 1  # 1点アップ
+        #     bird.change_img(6, screen)  # こうかとん喜びエフェクト
+        # 上記の機能はマージするときに調整する
+
+        if len(pg.sprite.spritecollide(bird, emys, True)) != 0: # GameOver
+            bird.change_img(8, screen)  # こうかとん悲しみエフェクト
+            fonto = pg.font.Font(None, 80)
+            txt = fonto.render("Game Over", True, (0, 0, 0))
+            screen.blit(txt, [WIDTH/2-170, HEIGHT/2-50])
+            score.update(screen)
+            tim.update(screen)
+            pg.display.update()
+            time.sleep(2)
+            return
         
         bird.update(key_lst, screen)
+        emys.update()
+        emys.draw(screen)
         score.update(screen)
-        time.update(screen)
+        tim.update(screen)
         pg.display.update()
-        time.tmr += 1
+        tim.tmr += 1
         clock.tick(200)
 
 
