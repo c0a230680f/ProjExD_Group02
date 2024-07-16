@@ -28,7 +28,6 @@ class Bird(pg.sprite.Sprite):
     """
     ゲームキャラクター（こうかとん）に関するクラス
     """
-
     def __init__(self, num: int, xy: tuple[int, int]):
         """
         こうかとん画像Surfaceを生成する
@@ -91,24 +90,20 @@ class Bird(pg.sprite.Sprite):
         if check_bound(self.rect) != (True, True):
             self.rect.move_ip(-self.speed*i, -self.speed*j)
         screen.blit(self.image, self.rect)
-
         # ライフを画像で表示する
         life_text = "Life:"
         font = pg.font.Font(None, 36)
         text = font.render(life_text, True, (255, 255, 255))
         screen.blit(text, (20, HEIGHT - 40))
-
         x_offset = 20 + text.get_width() + 10  # テキストの右側に10ピクセルの間隔を空ける
         y = HEIGHT - 40
         for _ in range(self.life):
             screen.blit(self.life_image, (x_offset, y))
             x_offset += self.life_image.get_width() + 10
-        
         # ライフが1になったらこうかとんを一回り大きくする
         if self.life == 1:
             self.image = pg.transform.rotozoom(pg.image.load("fig/3.png"), 0, 2)
             self.image = pg.transform.flip(self.image, True, False)
-            
         # ライフが2になったらこうかとんを一回り大きくする
         if self.life == 2:
             self.image = pg.transform.rotozoom(pg.image.load("fig/3.png"), 0, 3)
@@ -124,7 +119,8 @@ class Enemy(pg.sprite.Sprite):
     敵機に関するクラス
     """
     imgs = [pg.image.load(f"fig/alien{i}.png") for i in range(1, 4)]
-    
+    state = "normal"
+
     def __init__(self):
         super().__init__()
         self.image = random.choice(__class__.imgs)
@@ -132,17 +128,29 @@ class Enemy(pg.sprite.Sprite):
         self.rect.center = WIDTH, random.randint(0, HEIGHT)
         self.vx, self.vy = -1, 0
         self.speed = 1
+        self.state = "normal"
 
     def update(self):
         """
         敵機を移動させる
         引数 screen：画面Surface
         """
+        if Enemy.state == "normal":
+            self.speed = 1
+        if Enemy.state=="mode1":
+            self.speed = 1
+        if Enemy.state=="mode2":
+            self.speed = 2
+        if Enemy.state=="mode3":
+            self.speed = 3
+        if Enemy.state=="mode4":
+            self.speed = 4
+        if Enemy.state=="mode5":
+            self.speed = 5
         self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)
-        # if check_bound(self.rect) != (True, True):
-        #     self.kill()
 
 class Egg(pg.sprite.Sprite):
+
     def __init__(self, bird: Bird, screen: pg.Surface):
         super().__init__()
         self.vx, self.vy = bird.dire
@@ -218,7 +226,6 @@ class Chicken(pg.sprite.Sprite):
     """
     チキンを食べてライフを１つ増やす機能
     """
-    
     def __init__(self):
         super().__init__()
         image = pg.image.load(f"fig/chicken.png")
@@ -250,7 +257,6 @@ def main():
     chickens = pg.sprite.Group()  # チキンの機能
     eggs = pg.sprite.Group()
     count = 0  # 旗用のカウンター
-    # eggs = []
 
     while True:
         key_lst = pg.key.get_pressed()
@@ -259,8 +265,18 @@ def main():
                 return 0
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 eggs.add(Egg(bird, screen))  # スペースキーが押されたら卵を生成
- 
-
+            if event.type==pg.KEYDOWN and event.key ==pg.K_1:
+                Enemy.state = "mode1"
+            elif event.type==pg.KEYDOWN and event.key ==pg.K_2:
+                Enemy.state = "mode2"
+                #print(emys.speed)
+            elif event.type==pg.KEYDOWN and event.key ==pg.K_3:
+                Enemy.state = "mode3"
+                #print(emys.state)
+            elif event.type==pg.KEYDOWN and event.key ==pg.K_4:
+                Enemy.state = "mode4"
+            elif event.type==pg.KEYDOWN and event.key ==pg.K_5:
+                Enemy.state = "mode5"
         x = tim.tmr % 3200
         screen.blit(bg_img, [-x, 0])
         screen.blit(bg_img2, [-x+1600, 0])
